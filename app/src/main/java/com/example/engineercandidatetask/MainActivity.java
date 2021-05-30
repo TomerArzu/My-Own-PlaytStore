@@ -32,7 +32,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
 public class MainActivity extends AppCompatActivity implements DownloadCompleteListener, StoreItemClickListener, InstallationDoneListener {
@@ -159,10 +161,29 @@ public class MainActivity extends AppCompatActivity implements DownloadCompleteL
         PackageManager manager = this.getPackageManager();
         try {
             PackageInfo info = manager.getPackageInfo(packageName, PackageManager.GET_ACTIVITIES);
-            return info.versionName.equals(packageVersion);
+            ArrayList<String> currentVersion = new ArrayList<>(Arrays.asList(info.versionName.split("\\.")));
+            ArrayList<String> suggestVersion = new ArrayList<>(Arrays.asList(packageVersion.split("\\.")));
+            if(currentVersion.size() > suggestVersion.size()){
+                suggestVersion = versionEqualizer(currentVersion, suggestVersion);
+            } else if (suggestVersion.size() > currentVersion.size()){
+                currentVersion = versionEqualizer(suggestVersion, currentVersion);
+            }
+            for(int i=0;i<suggestVersion.size();i++){
+                if(Integer.parseInt(suggestVersion.get(i)) > Integer.parseInt(currentVersion.get(i))) {
+                    return false;
+                }
+            }
+            return true;
         } catch (PackageManager.NameNotFoundException e) {
             return false;
         }
+    }
+
+    private ArrayList<String> versionEqualizer(ArrayList<String> longVersion, ArrayList<String> shortVersion) {
+        while (shortVersion.size() != longVersion.size()){
+            shortVersion.add("0");
+        }
+        return shortVersion;
     }
 
     private String readDownloadedJson(File dataFile) {
